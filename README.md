@@ -2,7 +2,9 @@
 
 ## Finding a Valid Path using Search Algorithms To Solve King's Maze Problem
 
-Every instance of the chess board consists of obstacles, and enemy pieces that cannot be moved or captured. The goal of this problem is to move the king piece from a start position to any goal positions.
+Every instance of the chess board consists of obstacles, and enemy pieces that cannot be moved or captured. The goal of this problem is to move the king piece from a start position to any goal positions.  
+
+The algorithm is run with an input file that contains the details of the problem instance (size of chess board, position and type of enemy pieces, start position, goal positions, action costs for each position). This input file is to be parsed, and problem instance to be constructed, before the search algorithms can be used to find a path to a goal position.
 
 ## The Four Search Algorithms used:
 - **BFS**: Searches for a valid path from start position to goal position. The algorithm outputs the required moves, and number of nodes explored.

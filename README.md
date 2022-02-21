@@ -34,6 +34,6 @@ The algorithm is run with an input file that contains the details of the problem
 - **AStar**: 
     - Follows best-first search algorithm with a late goal test
     - Frontier: priority queue, where path cost + heuristic value becomes the priority attribute
-    - Heuristic: max((x1 - x2), abs(y1 - y2)), where (x1, y1) is the current position, and (x2, y2) is the nrearest goal state
+    - Heuristic: max((x1 - x2), abs(y1 - y2)), where (x1, y1) is the current position, and (x2, y2) is the nearest goal state
     - Keeps track of reached nodes
     - Only adds node to frontier if not explored or has lower cost than previously reached

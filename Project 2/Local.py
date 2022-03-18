@@ -53,25 +53,19 @@ class Board:
             position = key[0] + str(key[1])
 
             # Get the moves of the current piece
-            if currentPiece.lower() == "obstacle":
-                moves = []
-            if currentPiece.lower() == "king":
+            if currentPiece.name == "King":
                 moves = self.movesKing(state, position)
                 moves.remove([posX, posY]) # Removes self pos
-            if currentPiece.lower() == "rook":
-                # self.config[posX][posY] = "R"
+            if currentPiece.name == "Rook":
                 moves = self.movesRook(state, position)
                 moves.remove([posX, posY]) # Removes self pos
-            if currentPiece.lower() == "bishop":
-                # self.config[posX][posY] = "B"
+            if currentPiece.name == "Bishop":
                 moves = self.movesBishop(state, position)
                 moves.remove([posX, posY]) # Removes self pos
-            if currentPiece.lower() == "queen":
-                # self.config[posX][posY] = "Q"
+            if currentPiece.name == "Queen":
                 moves = self.movesQueen(state, position)
-                moves.remove([posX, posY]) # Removes self pos
-            if currentPiece.lower() == "knight":
-                # self.config[posX][posY] = "N"
+                moves.remove([posX, posY]) # Removes self posl
+            if currentPiece.name == "Knight":
                 moves = self.movesKnight(state, position)
                 moves.remove([posX, posY]) # Removes self pos
 
@@ -98,6 +92,39 @@ class Board:
                 value += self.config[i][j]
         # self.printBoard()
         return value
+
+    def initializeAttacks(self, state):
+        for key in state.pieces.keys(): # For all chess pieces
+            currentPiece = state.pieces[key]
+            posX = self.toSingleNumPos(key[0])
+            posY = key[1]
+            position = key[0] + str(key[1])
+
+            # Get the moves of the current piece
+            if currentPiece.name == "King":
+                moves = self.movesKing(state, position)
+                moves.remove([posX, posY]) # Removes self pos
+            if currentPiece.name == "Rook":
+                moves = self.movesRook(state, position)
+                moves.remove([posX, posY]) # Removes self pos
+            if currentPiece.name == "Bishop":
+                moves = self.movesBishop(state, position)
+                moves.remove([posX, posY]) # Removes self pos
+            if currentPiece.name == "Queen":
+                moves = self.movesQueen(state, position)
+                moves.remove([posX, posY]) # Removes self pos
+            if currentPiece.name == "Knight":
+                moves = self.movesKnight(state, position)
+                moves.remove([posX, posY]) # Removes self pos
+
+            for move in moves:
+                mposX = move[0]
+                mposY = move[1]
+                maPosX = self.toAlphaPos(mposX)
+                mposition = (maPosX, mposY) # Position of enemy piece ?
+                if mposition in state.pieces.keys():
+                    currentPiece.attacks.append(mposition)
+                    state.pieces[mposition].attackedBy.append(key)
 
     def getNeighbour(self, state): 
         values = {}
@@ -155,15 +182,15 @@ class Board:
         aPosX = self.toAlphaPos(posX)
         posY = int(numPos[1])
         if piece.lower() == "king":
-            state.pieces[(aPosX, posY)] = "King"
+            state.pieces[(aPosX, posY)] = Piece("King")
         if piece.lower() == "rook":
-            state.pieces[(aPosX, posY)] = "Rook"
+            state.pieces[(aPosX, posY)] = Piece("Rook")
         if piece.lower() == "bishop":
-            state.pieces[(aPosX, posY)] = "Bishop"
+            state.pieces[(aPosX, posY)] = Piece("Bishop")
         if piece.lower() == "queen":
-            state.pieces[(aPosX, posY)] = "Queen"
+            state.pieces[(aPosX, posY)] = Piece("Queen")
         if piece.lower() == "knight":
-            state.pieces[(aPosX, posY)] = "Knight"
+            state.pieces[(aPosX, posY)] = Piece("Knight")
 
     def isInBoard(self, posX, posY):
         return posX >= 0 and posX < self.rows and posY >= 0 and posY < self.cols
@@ -361,6 +388,21 @@ class Board:
     #     print("Cols:", end=" ")
     #     return str(self.cols)
 
+class Piece:
+    name = ""
+    attacks = []
+    attackedBy = []
+
+    def __init__(self, name):
+        self.name = name
+
+    def printPiece(self):
+        print("piece:", self.name)
+        print("attacks:", self.attacks)
+        print("attacked by:", end=" ")
+        return str(self.attackedBy)
+    pass
+
 class State:
     pieces = {}
     obstacles = {}
@@ -375,24 +417,28 @@ class State:
     def getObstacles(self):
         return self.obstacles
 
+
 def search(board, state):
     current = state
-    while True:
-        # print("CURRENT:")
-        # print(current.getPieces())
-        # print(board.getValue(current))
-        # print('\n')
-        neighbour = board.getNeighbour(current)
-        # print("NEIGHBOUR:")
-        # print(neighbour.getPieces())
-        # print(board.getValue(neighbour))
-        # print('\n')
-        valueNeighbour = board.getValue(neighbour)
-        # if len(neighbour.getPieces()) < board.K:
-        #     return neighbour.pieces
-        if valueNeighbour == 0 or valueNeighbour > board.getValue(current):
-            return neighbour.pieces
-        current = neighbour
+    board.initializeAttacks(current)
+    for key in current.pieces.keys():
+        current.pieces[key].printPiece()
+    # while True:
+    #     print("CURRENT:")
+    #     print(current.getPieces())
+    #     # print(board.getValue(current))
+    #     # print('\n')
+    #     neighbour = board.getNeighbour(current)
+    #     # print("NEIGHBOUR:")
+    #     # print(neighbour.getPieces())
+    #     # print(board.getValue(neighbour))
+    #     # print('\n')
+    #     valueNeighbour = board.getValue(neighbour)
+    #     # if len(neighbour.getPieces()) < board.K:
+    #     #     return neighbour.pieces
+    #     if valueNeighbour == 0 or valueNeighbour > board.getValue(current):
+    #         return neighbour.pieces
+    #     current = neighbour
 
 
 ### DO NOT EDIT/REMOVE THE FUNCTION HEADER BELOW###
@@ -461,4 +507,4 @@ def parseInputFile(board, state, inFile):
 
             
 ans = run_local()
-# print(ans)
+print(ans)

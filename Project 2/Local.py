@@ -3,7 +3,7 @@ import re
 import random
 from xmlrpc.client import MAXINT
 import copy
-random.seed(1)
+# random.seed(1)
 
 class Board:
     config = []
@@ -45,53 +45,29 @@ class Board:
                 counter += 1
         return counter
 
-    def calculateValue(self, state):
+    def calculateValue(self, state): # Only attacks
+        value = 0
         for key in state.pieces.keys():
             currentPiece = state.pieces[key]
-            posX = self.toSingleNumPos(key[0])
-            posY = key[1]
-            position = key[0] + str(key[1])
+            value += len(currentPiece.attacks)
+            value += len(currentPiece.attackedBy)
 
-            # Get the moves of the current piece
-            if currentPiece.name == "King":
-                moves = self.movesKing(state, position)
-                moves.remove([posX, posY]) # Removes self pos
-            if currentPiece.name == "Rook":
-                moves = self.movesRook(state, position)
-                moves.remove([posX, posY]) # Removes self pos
-            if currentPiece.name == "Bishop":
-                moves = self.movesBishop(state, position)
-                moves.remove([posX, posY]) # Removes self pos
-            if currentPiece.name == "Queen":
-                moves = self.movesQueen(state, position)
-                moves.remove([posX, posY]) # Removes self posl
-            if currentPiece.name == "Knight":
-                moves = self.movesKnight(state, position)
-                moves.remove([posX, posY]) # Removes self pos
-
-            # Checks each moves of the current piece +1 to config if threaten
-            for move in moves:
-                mposX = move[0]
-                mposY = move[1]
-                maPosX = self.toAlphaPos(mposX)
-                position = (maPosX, mposY)
-                if position in state.pieces.keys():
-                    self.config[posX][posY] += 1
-
-    def resetValue(self):
-        for i in range(self.rows):
-            for j in range(self.cols):
-                self.config[i][j] = 0
-
-    def getValue(self, state):
-        self.resetValue()
-        self.calculateValue(state)
-        value = 0
-        for i in range(self.rows):
-            for j in range(self.cols):
-                value += self.config[i][j]
-        # self.printBoard()
         return value
+
+    # def resetValue(self):
+    #     for i in range(self.rows):
+    #         for j in range(self.cols):
+    #             self.config[i][j] = 0
+
+    # def getValue(self, state):
+    #     self.resetValue()
+    #     self.calculateValue(state)
+    #     value = 0
+    #     for i in range(self.rows):
+    #         for j in range(self.cols):
+    #             value += self.config[i][j]
+    #     # self.printBoard()
+    #     return value
 
     def initializeAttacks(self, state):
         for key in state.pieces.keys(): # For all chess pieces
@@ -122,50 +98,89 @@ class Board:
                 mposY = move[1]
                 maPosX = self.toAlphaPos(mposX)
                 mposition = (maPosX, mposY) # Position of enemy piece ?
-                if mposition in state.pieces.keys():
-                    currentPiece.attacks.append(mposition)
-                    state.pieces[mposition].attackedBy.append(key)
+                if mposition in state.pieces.keys(): # If is an enemy
+                    currentPiece.addAttacks(mposition)
+                    state.pieces[mposition].addAttackedBy(key)
 
-    def getNeighbour(self, state): 
+    def removePiece(self, state, pos):
+        testPieces = copy.deepcopy(state.getPieces())
+        newState = State(testPieces, state.getObstacles())
+        for key in newState.pieces.keys():
+            currentPiece = newState.pieces[key]
+            if pos in currentPiece.attacks:
+                currentPiece.attacks.remove(pos)
+            if pos in currentPiece.attackedBy:
+                currentPiece.attackedBy.remove(pos)
+        del newState.pieces[pos]
+        return newState
+
+    def getNeighbour(self, state):
         values = {}
         for key in state.pieces.keys():
-            testPieces = copy.deepcopy(state.getPieces())
-            del testPieces[key]
-            next = State(testPieces, state.getObstacles())
-            value = self.getValue(next)
-            values[key] = value
+            currentPiece = state.pieces[key]
+            values[key] = len(currentPiece.attacks) + len(currentPiece.attackedBy)
 
-        minKeys = [key for key, value in values.items() if value == 
-        min(values.values())]
-        # print(values)
-        # print(minKeys)
+        maxKeys = [key for key, value in values.items() if value ==
+        max(values.values())]
 
-        # self.resetValue()
-        # self.calculateValue(state)
-        # self.printBoard()
-        # maxValue = 0
-        # positions = []
-        # for i in range(self.rows):
-        #     for j in range(self.cols):
-        #         if maxValue == self.config[i][j]:
-        #             positions.append([i, j])
-        #         if maxValue < self.config[i][j]:
-        #             maxValue = self.config[i][j]
-        #             positions = [[i, j]]
+        maxKey = random.choice(maxKeys)
+        for key in state.pieces.keys():
+            currentPiece = state.pieces[key]
+            if maxKey in currentPiece.attacks:
+                currentPiece.attacks.remove(maxKey)
+            if maxKey in currentPiece.attackedBy:
+                currentPiece.attackedBy.remove(maxKey)
+        del state.pieces[maxKey]
 
-        # print(positions)
-        # Randomizer Element
-        minKey = random.choice(minKeys)
-        # print(minKey)
-        # print(position)
+        return state
 
-        # aPosX = self.toAlphaPos(maxKey[0])
-        # aPos = (aPosX, maxKey[1])
-        pieces = state.getPieces()
-        del pieces[minKey]
-        neighbour = State(pieces, state.getObstacles())
+    # def getNeighbour(self, state): 
+    #     values = {}
+    #     for key in state.pieces.keys():
+    #         # print(state.pieces)
+    #         testState = self.removePiece(state, key)
+    #         # print(testState.pieces)
+    #         values[key] = self.calculateValue(testState)
+    #         # testPieces = copy.deepcopy(state.getPieces())
+    #         # del testPieces[key]
+    #         # next = State(testPieces, state.getObstacles())
+    #         # value = self.getValue(next)
+    #         # values[key] = value
 
-        return neighbour
+    #     minKeys = [key for key, value in values.items() if value == 
+    #     min(values.values())]
+    #     # print(values)
+    #     # print(minKeys)
+
+    #     # self.resetValue()
+    #     # self.calculateValue(state)
+    #     # self.printBoard()
+    #     # maxValue = 0
+    #     # positions = []
+    #     # for i in range(self.rows):
+    #     #     for j in range(self.cols):
+    #     #         if maxValue == self.config[i][j]:
+    #     #             positions.append([i, j])
+    #     #         if maxValue < self.config[i][j]:
+    #     #             maxValue = self.config[i][j]
+    #     #             positions = [[i, j]]
+
+    #     # print(positions)
+    #     # Randomizer Element
+    #     minKey = random.choice(minKeys)
+    #     # print(minKey)
+    #     # print(position)
+
+    #     # aPosX = self.toAlphaPos(maxKey[0])
+    #     # aPos = (aPosX, maxKey[1])
+        
+    #     # pieces = state.getPieces()
+    #     # del pieces[minKey]
+    #     # neighbour = State(pieces, state.getObstacles())
+
+    #     neighbour = self.removePiece(state, minKey)
+
+    #     return neighbour
 
     def setObstacles(self, state, positions):
         positions = positions.split()
@@ -182,15 +197,15 @@ class Board:
         aPosX = self.toAlphaPos(posX)
         posY = int(numPos[1])
         if piece.lower() == "king":
-            state.pieces[(aPosX, posY)] = Piece("King")
+            state.pieces[(aPosX, posY)] = Piece("King", (aPosX, posY), [], [])
         if piece.lower() == "rook":
-            state.pieces[(aPosX, posY)] = Piece("Rook")
+            state.pieces[(aPosX, posY)] = Piece("Rook", (aPosX, posY), [], [])
         if piece.lower() == "bishop":
-            state.pieces[(aPosX, posY)] = Piece("Bishop")
+            state.pieces[(aPosX, posY)] = Piece("Bishop", (aPosX, posY), [], [])
         if piece.lower() == "queen":
-            state.pieces[(aPosX, posY)] = Piece("Queen")
+            state.pieces[(aPosX, posY)] = Piece("Queen", (aPosX, posY), [], [])
         if piece.lower() == "knight":
-            state.pieces[(aPosX, posY)] = Piece("Knight")
+            state.pieces[(aPosX, posY)] = Piece("Knight", (aPosX, posY), [], [])
 
     def isInBoard(self, posX, posY):
         return posX >= 0 and posX < self.rows and posY >= 0 and posY < self.cols
@@ -390,18 +405,31 @@ class Board:
 
 class Piece:
     name = ""
+    pos = ()
     attacks = []
     attackedBy = []
+    i = "\n"
 
-    def __init__(self, name):
+    def __init__(self, name, pos, attacks, attackedBy):
         self.name = name
+        self.pos = pos
+        self.attacks = attacks
+        self.attackedBy = attackedBy
 
-    def printPiece(self):
-        print("piece:", self.name)
-        print("attacks:", self.attacks)
-        print("attacked by:", end=" ")
-        return str(self.attackedBy)
-    pass
+    def addAttacks(self, pos):
+        self.attacks.append(pos)
+
+    def addAttackedBy(self, pos):
+        self.attackedBy.append(pos)
+
+    # def printPiece(self):
+    #     print("piece:", self.name)
+    #     print("pos:", self.pos)
+    #     print("attacks:", self.attacks)
+    #     print("attacked by:", self.attackedBy)
+    #     print(" ", end=" ")
+    #     return str(self.i)
+    # pass
 
 class State:
     pieces = {}
@@ -418,27 +446,31 @@ class State:
         return self.obstacles
 
 
+def parseResult(goalState):
+    goal = {}
+    for key in goalState.keys():
+        goal[key] = goalState[key].name
+    return goal
+
 def search(board, state):
     current = state
     board.initializeAttacks(current)
-    for key in current.pieces.keys():
-        current.pieces[key].printPiece()
-    # while True:
-    #     print("CURRENT:")
-    #     print(current.getPieces())
-    #     # print(board.getValue(current))
-    #     # print('\n')
-    #     neighbour = board.getNeighbour(current)
-    #     # print("NEIGHBOUR:")
-    #     # print(neighbour.getPieces())
-    #     # print(board.getValue(neighbour))
-    #     # print('\n')
-    #     valueNeighbour = board.getValue(neighbour)
-    #     # if len(neighbour.getPieces()) < board.K:
-    #     #     return neighbour.pieces
-    #     if valueNeighbour == 0 or valueNeighbour > board.getValue(current):
-    #         return neighbour.pieces
-    #     current = neighbour
+    while True:
+        # print("CURRENT:")
+        # print(current.getPieces())
+        # print(board.getValue(current))
+        # print('\n')
+        neighbour = board.getNeighbour(current)
+        # print("NEIGHBOUR:")
+        # print(neighbour.getPieces())
+        # print(board.getValue(neighbour))
+        # print('\n')
+        valueNeighbour = board.calculateValue(neighbour)
+        # if len(neighbour.getPieces()) < board.K:
+        #     return neighbour.pieces
+        if valueNeighbour == 0 or valueNeighbour > board.calculateValue(current):
+            return parseResult(neighbour.pieces)
+        current = neighbour
 
 
 ### DO NOT EDIT/REMOVE THE FUNCTION HEADER BELOW###
@@ -489,22 +521,13 @@ def parseInputFile(board, state, inFile):
             if "k (minimum number" in parsedLine[0].lower():
                 board.K = int(parsedLine[2])
             
+            ## Position of enemy pieces
             if readPieces:
                 enemy = parsedLine[0].replace("[", "").replace("]", "").split(",")
                 board.setEnemy(state, enemy[0], enemy[1])
 
-            ## Position of enemy pieces
             if "position of pieces" in parsedLine[0].lower():
                 readPieces = True
-                # print(i)
-                # j = 1
-                # parsedLine = lines[i+j].partition(":") # checks for next line
-                # while i + j < len(lines): # TODO make sure this one correct looping
-                #     enemy = parsedLine[0].replace("[", "").replace("]", "").split(",")
-                #     board.setEnemy(state, enemy[0], enemy[1])
-                #     j += 1
-                #     parsedLine = lines[i+j].partition(":")
-
             
 ans = run_local()
-print(ans)
+# print(ans)

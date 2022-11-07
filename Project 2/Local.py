@@ -3,7 +3,6 @@ import re
 import random
 from xmlrpc.client import MAXINT
 import copy
-# random.seed(1)
 
 class Board:
     config = []
@@ -53,21 +52,6 @@ class Board:
             value += len(currentPiece.attackedBy)
 
         return value
-
-    # def resetValue(self):
-    #     for i in range(self.rows):
-    #         for j in range(self.cols):
-    #             self.config[i][j] = 0
-
-    # def getValue(self, state):
-    #     self.resetValue()
-    #     self.calculateValue(state)
-    #     value = 0
-    #     for i in range(self.rows):
-    #         for j in range(self.cols):
-    #             value += self.config[i][j]
-    #     # self.printBoard()
-    #     return value
 
     def initializeAttacks(self, state):
         for key in state.pieces.keys(): # For all chess pieces
@@ -133,54 +117,6 @@ class Board:
         del state.pieces[maxKey]
 
         return state
-
-    # def getNeighbour(self, state): 
-    #     values = {}
-    #     for key in state.pieces.keys():
-    #         # print(state.pieces)
-    #         testState = self.removePiece(state, key)
-    #         # print(testState.pieces)
-    #         values[key] = self.calculateValue(testState)
-    #         # testPieces = copy.deepcopy(state.getPieces())
-    #         # del testPieces[key]
-    #         # next = State(testPieces, state.getObstacles())
-    #         # value = self.getValue(next)
-    #         # values[key] = value
-
-    #     minKeys = [key for key, value in values.items() if value == 
-    #     min(values.values())]
-    #     # print(values)
-    #     # print(minKeys)
-
-    #     # self.resetValue()
-    #     # self.calculateValue(state)
-    #     # self.printBoard()
-    #     # maxValue = 0
-    #     # positions = []
-    #     # for i in range(self.rows):
-    #     #     for j in range(self.cols):
-    #     #         if maxValue == self.config[i][j]:
-    #     #             positions.append([i, j])
-    #     #         if maxValue < self.config[i][j]:
-    #     #             maxValue = self.config[i][j]
-    #     #             positions = [[i, j]]
-
-    #     # print(positions)
-    #     # Randomizer Element
-    #     minKey = random.choice(minKeys)
-    #     # print(minKey)
-    #     # print(position)
-
-    #     # aPosX = self.toAlphaPos(maxKey[0])
-    #     # aPos = (aPosX, maxKey[1])
-        
-    #     # pieces = state.getPieces()
-    #     # del pieces[minKey]
-    #     # neighbour = State(pieces, state.getObstacles())
-
-    #     neighbour = self.removePiece(state, minKey)
-
-    #     return neighbour
 
     def setObstacles(self, state, positions):
         positions = positions.split()
@@ -392,17 +328,6 @@ class Board:
         moves.append([posX, posY])
         return moves
 
-    # def printBoard(self):
-    #     for i in range(1, len(self.config) + 1):
-    #         print("a", self.config[len(self.config) - i])
-
-    #     print("    0, 1, 2, 3, ...")
-
-    # def __str__(self):
-    #     print("Rows:", self.rows)
-    #     print("Cols:", end=" ")
-    #     return str(self.cols)
-
 class Piece:
     name = ""
     pos = ()
@@ -421,15 +346,6 @@ class Piece:
 
     def addAttackedBy(self, pos):
         self.attackedBy.append(pos)
-
-    # def printPiece(self):
-    #     print("piece:", self.name)
-    #     print("pos:", self.pos)
-    #     print("attacks:", self.attacks)
-    #     print("attacked by:", self.attackedBy)
-    #     print(" ", end=" ")
-    #     return str(self.i)
-    # pass
 
 class State:
     pieces = {}
@@ -456,18 +372,8 @@ def search(board, state):
     current = state
     board.initializeAttacks(current)
     while True:
-        # print("CURRENT:")
-        # print(current.getPieces())
-        # print(board.getValue(current))
-        # print('\n')
         neighbour = board.getNeighbour(current)
-        # print("NEIGHBOUR:")
-        # print(neighbour.getPieces())
-        # print(board.getValue(neighbour))
-        # print('\n')
         valueNeighbour = board.calculateValue(neighbour)
-        # if len(neighbour.getPieces()) < board.K:
-        #     return neighbour.pieces
         if valueNeighbour == 0 or valueNeighbour > board.calculateValue(current):
             return parseResult(neighbour.pieces)
         current = neighbour
@@ -485,14 +391,11 @@ def run_local():
     piecesLeft = 0
     board = Board()
     goalState = {}
-    # i = 1
     while piecesLeft < board.K:
-        # print("########## LOOP:", i, " ###########")
         state = State({}, {})
         parseInputFile(board, state, testFile)
         goalState = search(board, state)
         piecesLeft = len(goalState)
-        # i += 1
     return goalState #Format to be returned
 
 def parseInputFile(board, state, inFile):
@@ -530,4 +433,3 @@ def parseInputFile(board, state, inFile):
                 readPieces = True
             
 ans = run_local()
-# print(ans)
